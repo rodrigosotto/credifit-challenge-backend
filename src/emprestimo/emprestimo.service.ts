@@ -1,5 +1,10 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { CreateEmprestimoDto } from './../shared/dtos/create-emprestimo.dto';
+import { Funcionario } from '../shared/interfaces/funcionario.interface';
+import { Empresa } from '../shared/interfaces/empresa.interface';
+import { REGRAS_SCORE } from '../shared/constants/score-regras.constant';
+import { calcularVencimentos } from '../shared/utils/vencimentos.util';
+import { StatusEmprestimo } from '../shared/enums/status-emprestimo.enum';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
@@ -75,18 +80,17 @@ export class EmprestimoService {
 
   // metodos auxiliares
 
-  private async buscarFuncionarioPorCpf(cpf: string) {
-    // mock temporario
-    if (cpf === '12345678900') {
-      return {
-        nome: 'João da Silva',
-        cpf,
-        salario: 3000,
-        empresaId: 'empresa-1',
-      };
-    }
-    return null;
-  }
+private async buscarFuncionarioPorCpf(cpf: string): Promise<Funcionario | null> {
+  return {
+    nome: 'João da Silva',
+    cpf,
+    salario: 3000,
+    empresaId: 'empresa-1',
+    email: 'joao.silva@example.com',
+    senha: '123456'
+  };
+}
+
 
   private async buscarEmpresaPorFuncionario(funcionario: any) {
     // mock temporario

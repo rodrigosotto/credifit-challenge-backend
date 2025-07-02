@@ -11,6 +11,10 @@ import {
 import { CreateEmprestimoDto } from './../shared/dtos/create-emprestimo.dto';
 import { EmprestimoService } from './emprestimo.service';
 
+import { FuncionarioService } from '../funcionario/funcionario.service';
+import { EmpresaService } from '../empresa/empresa.service';
+
+
 @Controller('emprestimos')
 export class EmprestimoController {
   constructor(private readonly emprestimoService: EmprestimoService) {}
