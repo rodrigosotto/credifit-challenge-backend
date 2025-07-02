@@ -1,5 +1,3 @@
-// src/emprestimo/emprestimo.service.ts
-
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { CreateEmprestimoDto } from './../shared/dtos/create-emprestimo.dto';
 import axios from 'axios';
@@ -10,29 +8,23 @@ export class EmprestimoService {
   private emprestimos: any[] = [];
 
   async solicitar(dto: CreateEmprestimoDto) {
-    // 1. Buscar funcionário (mockado por enquanto)
     const funcionario = await this.buscarFuncionarioPorCpf(dto.cpf);
     if (!funcionario) {
       throw new BadRequestException('Funcionário não encontrado');
     }
 
-    // 2. Verificar se empresa é conveniada (mock)
     const empresa = await this.buscarEmpresaPorFuncionario(funcionario);
     if (!empresa) {
       throw new BadRequestException('Empresa não conveniada');
     }
 
-    // 3. Validar margem de 35%
     const parcela = dto.valorSolicitado / dto.numeroParcelas;
     const maxParcelaPermitida = funcionario.salario * 0.35;
     if (parcela > maxParcelaPermitida) {
       throw new BadRequestException('Margem consignável excedida');
     }
-
-    // 4. Consultar score
     const score = await this.consultarScore(funcionario.cpf);
 
-    // 5. Validar score com base no salário
     const scoreMinimo = this.obterScoreMinimo(funcionario.salario);
     if (score < scoreMinimo) {
       const resultado = {
@@ -47,17 +39,15 @@ export class EmprestimoService {
       return resultado;
     }
 
-    // 6. Calcular datas de vencimento
     const datas = this.calcularVencimentos(dto.numeroParcelas);
 
-    // 7. Simular pagamento via mock
     const pagamento = await this.simularPagamento();
     if (pagamento.status !== 'aprovado') {
       const resultado = {
         status: 'rejeitado',
         cpf: dto.cpf,
         valor: dto.valorSolicitado,
-        motivo: 'Score insuficiente', // ou "Falha no pagamento"
+        motivo: 'Score insuficiente', // ou "falha no pagamento"
         criadoEm: new Date().toISOString(),
       };
 
@@ -65,7 +55,6 @@ export class EmprestimoService {
       return resultado;
     }
 
-    // 8. Retornar empréstimo aprovado
     const resultado = {
       status: 'aprovado',
       cpf: dto.cpf,
@@ -84,10 +73,10 @@ export class EmprestimoService {
     return this.emprestimos;
   }
 
-  // Métodos auxiliares
+  // metodos auxiliares
 
   private async buscarFuncionarioPorCpf(cpf: string) {
-    // Mock temporário
+    // mock temporario
     if (cpf === '12345678900') {
       return {
         nome: 'João da Silva',
@@ -100,7 +89,7 @@ export class EmprestimoService {
   }
 
   private async buscarEmpresaPorFuncionario(funcionario: any) {
-    // Mock temporário
+    // mock temporario
     if (funcionario.empresaId === 'empresa-1') {
       return {
         id: 'empresa-1',
@@ -118,7 +107,7 @@ export class EmprestimoService {
       );
       return data.score ?? 0;
     } catch {
-      return 0; // Score inválido se mock falhar
+      return 0; // score invalido se mock falhar
     }
   }
 
