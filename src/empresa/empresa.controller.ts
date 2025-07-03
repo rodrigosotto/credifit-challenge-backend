@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Post,
+  Get,
   BadRequestException,
   UsePipes,
   ValidationPipe,
@@ -16,12 +17,21 @@ export class EmpresaController {
   @Post()
   @UsePipes(new ValidationPipe({ whitelist: true }))
   async criarEmpresa(@Body() dto: CreateEmpresaDto) {
-    const exists = await this.empresaService.buscarPorEmailOuCnpj(dto.email, dto.cnpj);
+    const exists = await this.empresaService.buscarPorEmailOuCnpj(
+      dto.email,
+      dto.cnpj,
+    );
     if (exists) {
-      throw new BadRequestException('Empresa já cadastrada com este e-mail ou CNPJ');
+      throw new BadRequestException(
+        'Empresa já cadastrada com este e-mail ou CNPJ',
+      );
     }
 
-    const empresa = await this.empresaService.criar(dto);
-    return empresa;
+    return this.empresaService.criar(dto);
+  }
+
+  @Get()
+  async listarEmpresas() {
+    return this.empresaService.listar();
   }
 }

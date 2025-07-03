@@ -7,14 +7,15 @@ import { randomUUID } from 'crypto';
 export class EmpresaService {
   private empresas: Empresa[] = [];
 
-  async buscarPorId(id: string) {
+  async buscarPorId(id: string): Promise<Empresa | undefined> {
     return this.empresas.find((e) => e.id === id);
   }
 
-  async buscarPorEmailOuCnpj(email: string, cnpj: string) {
-    return this.empresas.find(
-      (e) => e.email === email || e.cnpj === cnpj,
-    );
+  async buscarPorEmailOuCnpj(
+    email: string,
+    cnpj: string,
+  ): Promise<Empresa | undefined> {
+    return this.empresas.find((e) => e.email === email || e.cnpj === cnpj);
   }
 
   async criar(dto: CreateEmpresaDto): Promise<Empresa> {
@@ -24,5 +25,9 @@ export class EmpresaService {
     };
     this.empresas.push(empresa);
     return empresa;
+  }
+
+  listar(): Empresa[] {
+    return this.empresas;
   }
 }
