@@ -1,19 +1,13 @@
-// src/emprestimo/emprestimo.controller.ts
-
 import {
   Body,
   Controller,
-  Post,
   Get,
+  Post,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { CreateEmprestimoDto } from './../shared/dtos/create-emprestimo.dto';
 import { EmprestimoService } from './emprestimo.service';
-
-import { FuncionarioService } from '../funcionario/funcionario.service';
-import { EmpresaService } from '../empresa/empresa.service';
-
+import { CreateEmprestimoDto } from '../shared/dtos/create-emprestimo.dto';
 
 @Controller('emprestimos')
 export class EmprestimoController {
@@ -26,7 +20,7 @@ export class EmprestimoController {
   }
 
   @Get()
-  listarEmprestimos() {
+  listar() {
     return this.emprestimoService.listar();
   }
 }

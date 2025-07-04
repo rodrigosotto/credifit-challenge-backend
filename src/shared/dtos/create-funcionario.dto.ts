@@ -1,23 +1,22 @@
-import { IsString, IsNotEmpty, IsEmail, IsNumber } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, Min } from 'class-validator';
 
 export class CreateFuncionarioDto {
-  @IsString()
   @IsNotEmpty()
   nome: string;
 
-  @IsString()
   @IsNotEmpty()
   cpf: string;
 
   @IsEmail()
   email: string;
 
-  @IsString()
+  @IsNotEmpty()
   senha: string;
 
   @IsNumber()
+  @Min(0)
   salario: number;
 
-  @IsString()
+  @IsNotEmpty()
   empresaId: string;
 }

@@ -1,9 +1,8 @@
 import {
   Body,
   Controller,
-  Post,
   Get,
-  BadRequestException,
+  Post,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -16,22 +15,12 @@ export class EmpresaController {
 
   @Post()
   @UsePipes(new ValidationPipe({ whitelist: true }))
-  async criarEmpresa(@Body() dto: CreateEmpresaDto) {
-    const exists = await this.empresaService.buscarPorEmailOuCnpj(
-      dto.email,
-      dto.cnpj,
-    );
-    if (exists) {
-      throw new BadRequestException(
-        'Empresa já cadastrada com este e-mail ou CNPJ',
-      );
-    }
-
+  async criar(@Body() dto: CreateEmpresaDto) {
     return this.empresaService.criar(dto);
   }
 
   @Get()
-  async listarEmpresas() {
+  listar() {
     return this.empresaService.listar();
   }
 }

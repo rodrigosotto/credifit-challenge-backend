@@ -1,16 +1,14 @@
-import { IsString, IsNotEmpty, IsNumber, Min, Max } from 'class-validator';
+import { IsNotEmpty, IsNumber, Min } from 'class-validator';
 
 export class CreateEmprestimoDto {
-  @IsString()
   @IsNotEmpty()
   cpf: string;
 
   @IsNumber()
-  @Min(1)
+  @Min(100)
   valorSolicitado: number;
 
   @IsNumber()
   @Min(1)
-  @Max(4)
   numeroParcelas: number;
 }

@@ -1,24 +1,22 @@
-import { IsString, IsNotEmpty, IsEmail } from 'class-validator';
+import { IsEmail, IsNotEmpty, Length } from 'class-validator';
 
 export class CreateEmpresaDto {
-  @IsString()
   @IsNotEmpty()
   cnpj: string;
 
-  @IsString()
   @IsNotEmpty()
   razaoSocial: string;
 
-  @IsString()
   @IsNotEmpty()
   nomeResponsavel: string;
 
-  @IsString()
+  @IsNotEmpty()
   cpfResponsavel: string;
 
   @IsEmail()
   email: string;
 
-  @IsString()
+  @IsNotEmpty()
+  @Length(6)
   senha: string;
 }

@@ -1,146 +1,97 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { CreateEmprestimoDto } from './../shared/dtos/create-emprestimo.dto';
-import { Funcionario } from '../shared/interfaces/funcionario.interface';
-import { Empresa } from '../shared/interfaces/empresa.interface';
-import { REGRAS_SCORE } from '../shared/constants/score-regras.constant';
-import { calcularVencimentos } from '../shared/utils/vencimentos.util';
-import { StatusEmprestimo } from '../shared/enums/status-emprestimo.enum';
 import axios from 'axios';
-import dayjs from 'dayjs';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { CreateEmprestimoDto } from '../shared/dtos/create-emprestimo.dto';
+import { Emprestimo } from '../shared/interfaces/emprestimo.interface';
+import { FuncionarioService } from '../funcionario/funcionario.service';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class EmprestimoService {
-  private emprestimos: any[] = [];
+  private emprestimos: Emprestimo[] = [];
 
-  async solicitar(dto: CreateEmprestimoDto) {
-    const funcionario = await this.buscarFuncionarioPorCpf(dto.cpf);
+  constructor(private readonly funcionarioService: FuncionarioService) {}
+
+  async solicitar(dto: CreateEmprestimoDto): Promise<Emprestimo> {
+    const funcionario = this.funcionarioService.buscarPorCpf(dto.cpf);
     if (!funcionario) {
-      throw new BadRequestException('Funcionário não encontrado');
+      throw new NotFoundException('Funcionário não encontrado');
     }
 
-    const empresa = await this.buscarEmpresaPorFuncionario(funcionario);
-    if (!empresa) {
-      throw new BadRequestException('Empresa não conveniada');
+    const valorParcela = dto.valorSolicitado / dto.numeroParcelas;
+    const limiteParcela = funcionario.salario * 0.3;
+
+    if (valorParcela > limiteParcela) {
+      return this.registrarRejeicao(dto, 'Parcela excede 30% do salário');
     }
 
-    const parcela = dto.valorSolicitado / dto.numeroParcelas;
-    const maxParcelaPermitida = funcionario.salario * 0.35;
-    if (parcela > maxParcelaPermitida) {
-      throw new BadRequestException('Margem consignável excedida');
-    }
-    const score = await this.consultarScore(funcionario.cpf);
+    // ✅ Nova lógica de validação por score
+    const score = await this.obterScoreExternamente();
+    const scoreMinimo = this.calcularScoreMinimo(funcionario.salario);
 
-    const scoreMinimo = this.obterScoreMinimo(funcionario.salario);
     if (score < scoreMinimo) {
-      const resultado = {
-        status: 'rejeitado',
-        cpf: dto.cpf,
-        valor: dto.valorSolicitado,
-        motivo: 'Score insuficiente', // ou "Falha no pagamento"
-        criadoEm: new Date().toISOString(),
-      };
-
-      this.emprestimos.push(resultado);
-      return resultado;
+      return this.registrarRejeicao(
+        dto,
+        `Score insuficiente (mínimo necessário: ${scoreMinimo})`,
+      );
     }
 
-    const datas = this.calcularVencimentos(dto.numeroParcelas);
-
-    const pagamento = await this.simularPagamento();
-    if (pagamento.status !== 'aprovado') {
-      const resultado = {
-        status: 'rejeitado',
-        cpf: dto.cpf,
-        valor: dto.valorSolicitado,
-        motivo: 'Score insuficiente', // ou "falha no pagamento"
-        criadoEm: new Date().toISOString(),
-      };
-
-      this.emprestimos.push(resultado);
-      return resultado;
-    }
-
-    const resultado = {
-      status: 'aprovado',
+    // ✅ Aprovado
+    const emprestimo: Emprestimo = {
+      id: randomUUID(),
       cpf: dto.cpf,
-      valor: dto.valorSolicitado,
-      parcelas: dto.numeroParcelas,
-      valorParcela: parcela,
-      vencimentos: datas,
+      valorSolicitado: dto.valorSolicitado,
+      numeroParcelas: dto.numeroParcelas,
+      status: 'aprovado',
       criadoEm: new Date().toISOString(),
     };
 
-    this.emprestimos.push(resultado);
-    return resultado;
-  }
-  
-  listar() {
-    return this.emprestimos;
+    this.emprestimos.push(emprestimo);
+    return emprestimo;
   }
 
-  // metodos auxiliares
-
-private async buscarFuncionarioPorCpf(cpf: string): Promise<Funcionario | null> {
-  return {
-    nome: 'João da Silva',
-    cpf,
-    salario: 3000,
-    empresaId: 'empresa-1',
-    email: 'joao.silva@example.com',
-    senha: '123456'
-  };
-}
-
-
-  private async buscarEmpresaPorFuncionario(funcionario: any) {
-    // mock temporario
-    if (funcionario.empresaId === 'empresa-1') {
-      return {
-        id: 'empresa-1',
-        nome: 'Empresa XPTO',
-        cnpj: '00000000000100',
-      };
-    }
-    return null;
-  }
-
-  private async consultarScore(cpf: string): Promise<number> {
+  private async obterScoreExternamente(): Promise<number> {
     try {
       const { data } = await axios.get(
         'https://mocki.io/v1/f7b3627c-444a-4d65-b76b-d94a6c63bdcf',
       );
-      return data.score ?? 0;
-    } catch {
-      return 0; // score invalido se mock falhar
+      return data.score || 0;
+    } catch (err) {
+      console.error('Erro ao obter score externo:', err);
+      return 0;
     }
   }
 
-  private obterScoreMinimo(salario: number): number {
+  private calcularScoreMinimo(salario: number): number {
     if (salario <= 2000) return 400;
     if (salario <= 4000) return 500;
     if (salario <= 8000) return 600;
-    return 700;
+    if (salario <= 12000) return 700;
+    return 700; // Acima de 12 mil
   }
 
-  private calcularVencimentos(parcelas: number): string[] {
-    const vencimentos: string[] = [];
-    const hoje = dayjs();
+  private registrarRejeicao(
+    dto: CreateEmprestimoDto,
+    motivo: string,
+  ): Emprestimo {
+    const emprestimo: Emprestimo = {
+      id: randomUUID(),
+      cpf: dto.cpf,
+      valorSolicitado: dto.valorSolicitado,
+      numeroParcelas: dto.numeroParcelas,
+      status: 'rejeitado',
+      motivo,
+      criadoEm: new Date().toISOString(),
+    };
 
-    for (let i = 1; i <= parcelas; i++) {
-      vencimentos.push(hoje.add(i, 'month').format('DD/MM/YYYY'));
-    }
-
-    return vencimentos;
+    this.emprestimos.push(emprestimo);
+    return emprestimo;
   }
 
-  private async simularPagamento(): Promise<{ status: string }> {
-    try {
-      const { data } = await axios.get(
-        'https://mocki.io/v1/386c594b-d42f-4d14-8036-508a0cf1264c',
-      );
-      return data;
-    } catch {
-      return { status: 'rejeitado' };
-    }
+  listar(): Emprestimo[] {
+    return this.emprestimos;
   }
 }
