@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   UsePipes,
   ValidationPipe,
@@ -22,5 +23,10 @@ export class EmprestimoController {
   @Get()
   listar() {
     return this.emprestimoService.listar();
+  }
+
+  @Get(':cpf')
+  buscarPorCpf(@Param('cpf') cpf: string) {
+    return this.emprestimoService.listarPorCpf(cpf);
   }
 }

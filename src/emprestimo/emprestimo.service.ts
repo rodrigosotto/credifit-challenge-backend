@@ -94,4 +94,7 @@ export class EmprestimoService {
   listar(): Emprestimo[] {
     return this.emprestimos;
   }
+  listarPorCpf(cpf: string): Emprestimo[] {
+    return this.emprestimos.filter((e) => e.cpf === cpf);
+  }
 }
