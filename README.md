@@ -120,5 +120,5 @@ Reprodução, cópia ou redistribuição total/parcial sem autorização prévia
 
 ## ✍️ Autor
 
-Desenvolvido por **Jefferson (Rodrigo)**  
-🌍 [LinkedIn](https://www.linkedin.com/in/seu-usuario)
+Desenvolvido por **Jefferson Rodrigo Sotto**  
+🌍 [LinkedIn](https://www.linkedin.com/in/jeffersonsotto)
