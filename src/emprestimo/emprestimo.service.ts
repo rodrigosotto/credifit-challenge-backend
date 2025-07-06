@@ -4,13 +4,10 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
 import { CreateEmprestimoDto } from '../shared/dtos/create-emprestimo.dto';
 import { Emprestimo } from '../shared/interfaces/emprestimo.interface';
 import { FuncionarioService } from '../funcionario/funcionario.service';
 import { randomUUID } from 'crypto';
-
-import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class EmprestimoService {
@@ -41,9 +38,10 @@ export class EmprestimoService {
       );
     }
     try {
-      const response = await axios.post(
-        'https://mocki.io/v1/386c594b-d42f-4d14-8036-508a0cf1264c',
-      );
+      const response = await axios.post('http://localhost:3000/pagamento', {
+        valor: dto.valorSolicitado,
+        parcelas: dto.numeroParcelas,
+      });
 
       if (response.data.status !== 'aprovado') {
         throw new Error('Falha no pagamento');
@@ -117,6 +115,7 @@ export class EmprestimoService {
   listar(): Emprestimo[] {
     return this.emprestimos;
   }
+
   listarPorCpf(cpf: string): Emprestimo[] {
     return this.emprestimos.filter((e) => e.cpf === cpf);
   }
