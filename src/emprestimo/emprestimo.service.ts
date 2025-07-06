@@ -4,10 +4,13 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
 import { CreateEmprestimoDto } from '../shared/dtos/create-emprestimo.dto';
 import { Emprestimo } from '../shared/interfaces/emprestimo.interface';
 import { FuncionarioService } from '../funcionario/funcionario.service';
 import { randomUUID } from 'crypto';
+
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class EmprestimoService {
@@ -28,7 +31,6 @@ export class EmprestimoService {
       return this.registrarRejeicao(dto, 'Parcela excede 30% do salário');
     }
 
-    // ✅ Nova lógica de validação por score
     const score = await this.obterScoreExternamente();
     const scoreMinimo = this.calcularScoreMinimo(funcionario.salario);
 
@@ -38,8 +40,28 @@ export class EmprestimoService {
         `Score insuficiente (mínimo necessário: ${scoreMinimo})`,
       );
     }
+    try {
+      const response = await axios.post(
+        'https://mocki.io/v1/386c594b-d42f-4d14-8036-508a0cf1264c',
+      );
 
-    // ✅ Aprovado
+      if (response.data.status !== 'aprovado') {
+        throw new Error('Falha no pagamento');
+      }
+    } catch (error) {
+      const resultado: Emprestimo = {
+        id: randomUUID(),
+        cpf: dto.cpf,
+        valorSolicitado: dto.valorSolicitado,
+        numeroParcelas: dto.numeroParcelas,
+        status: 'rejeitado',
+        motivo: 'Falha no pagamento',
+        criadoEm: new Date().toISOString(),
+      };
+      this.emprestimos.push(resultado);
+      return resultado;
+    }
+
     const emprestimo: Emprestimo = {
       id: randomUUID(),
       cpf: dto.cpf,
@@ -50,6 +72,7 @@ export class EmprestimoService {
     };
 
     this.emprestimos.push(emprestimo);
+
     return emprestimo;
   }
 
@@ -70,7 +93,7 @@ export class EmprestimoService {
     if (salario <= 4000) return 500;
     if (salario <= 8000) return 600;
     if (salario <= 12000) return 700;
-    return 700; // Acima de 12 mil
+    return 700;
   }
 
   private registrarRejeicao(
